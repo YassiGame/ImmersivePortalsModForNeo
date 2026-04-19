@@ -23,7 +23,9 @@
     "sodium.MixinSodiumShaderLoader",
     "sodium.MixinSodiumViewport",
     "sodium.MixinSodiumWorldRenderer",
-    "sable.MixinSableSubLevelContainer"
+    "sable.MixinSableSubLevelContainer",
+    "sable.MixinBlockManipulationClient",
+    "sable.MixinBlockManipulationServer"
   ],
   "injectors": {
     "defaultRequire": 1
