@@ -13,7 +13,9 @@ import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import qouteall.imm_ptl.core.chunk_loading.ImmPtlChunkTracking;
 import qouteall.imm_ptl.core.ducks.IEChunkMap;
 import qouteall.imm_ptl.core.ducks.IEEntityTrackerEntry;
@@ -84,26 +86,19 @@ public abstract class MixinTrackedEntity implements IETrackedEntity {
         );
     }
     
-    /**
-     * @author qouteall
-     * @reason managed by ImmPtl
-     * In vanilla, entity tracking updates when
-     * - {@link ChunkMap#move(ServerPlayer)}
-     *   When the player moves, the entities in curr dim except that player updates to that player,
-     *   and that player updates to all player in that dimension
-     */
-    @Overwrite
-    public void updatePlayer(ServerPlayer player) {
-        // nothing
+    // Entity tracking is managed by ImmPtl: vanilla's updatePlayer/updatePlayers
+    // are bypassed via a HEAD cancel rather than @Overwrite. This preserves the
+    // original method body so other mods (e.g. Sable) can still apply their
+    // own @Redirect / @Inject injections against the vanilla bytecode without
+    // failing at apply time.
+    @Inject(method = "updatePlayer", at = @At("HEAD"), cancellable = true)
+    private void ip_skipUpdatePlayer(ServerPlayer player, CallbackInfo ci) {
+        ci.cancel();
     }
-    
-    /**
-     * @author qouteall
-     * @reason managed by ImmPtl
-     */
-    @Overwrite
-    public void updatePlayers(List<ServerPlayer> list) {
-        // nothing
+
+    @Inject(method = "updatePlayers", at = @At("HEAD"), cancellable = true)
+    private void ip_skipUpdatePlayers(List<ServerPlayer> list, CallbackInfo ci) {
+        ci.cancel();
     }
     
     @Override

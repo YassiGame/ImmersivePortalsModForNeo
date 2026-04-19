@@ -61,6 +61,7 @@ import qouteall.q_misc_util.my_util.IntBox;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -76,8 +77,50 @@ import java.util.stream.Stream;
 
 // mc related helper methods
 public class McHelper {
-    
+
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    // Sable wraps the vanilla LevelEntityGetterAdapter in its own
+    // SubLevelInclusiveLevelEntityGetter. That wrapper is not a
+    // LevelEntityGetterAdapter, so casting straight to IELevelEntityGetterAdapter
+    // throws ClassCastException. We unwrap it reflectively because sable-companion
+    // does not expose a public accessor for the delegate.
+    private static boolean sableWrapperLookupDone = false;
+    @Nullable private static Class<?> sableWrapperClass;
+    @Nullable private static Field sableWrapperDelegateField;
+
+    @SuppressWarnings("unchecked")
+    public static LevelEntityGetter<Entity> unwrapEntityLookup(LevelEntityGetter<Entity> entityLookup) {
+        if (entityLookup instanceof net.minecraft.world.level.entity.LevelEntityGetterAdapter) {
+            return entityLookup;
+        }
+
+        if (!sableWrapperLookupDone) {
+            sableWrapperLookupDone = true;
+            try {
+                sableWrapperClass = Class.forName("dev.ryanhcode.sable.util.SubLevelInclusiveLevelEntityGetter");
+                sableWrapperDelegateField = sableWrapperClass.getDeclaredField("delegate");
+                sableWrapperDelegateField.setAccessible(true);
+            }
+            catch (ReflectiveOperationException e) {
+                sableWrapperClass = null;
+                sableWrapperDelegateField = null;
+            }
+        }
+
+        if (sableWrapperClass != null && sableWrapperClass.isInstance(entityLookup)) {
+            try {
+                LevelEntityGetter<Entity> delegate =
+                    (LevelEntityGetter<Entity>) sableWrapperDelegateField.get(entityLookup);
+                return unwrapEntityLookup(delegate);
+            }
+            catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to unwrap Sable SubLevelInclusiveLevelEntityGetter", e);
+            }
+        }
+
+        return entityLookup;
+    }
     
     public static class Placeholder {}
     
@@ -552,7 +595,7 @@ public class McHelper {
         EntityTypeTest<Entity, T> typeFilter = EntityTypeTest.forClass(entityClass);
         
         EntitySectionStorage<Entity> cache =
-            (EntitySectionStorage<Entity>) ((IELevelEntityGetterAdapter) entityLookup).getCache();
+            (EntitySectionStorage<Entity>) ((IELevelEntityGetterAdapter) unwrapEntityLookup(entityLookup)).getCache();
         
         return ((IESectionedEntityCache<Entity>) cache).ip_traverseSectionInBox(
             chunkXStart, chunkXEnd,
