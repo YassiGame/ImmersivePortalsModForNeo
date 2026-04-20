@@ -1,8 +1,6 @@
 package qouteall.imm_ptl.core.compat.mixin.sable;
 
 import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.companion.math.JOMLConversion;
-import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -43,17 +41,15 @@ public abstract class MixinBlockManipulationServer {
         SubLevel subLevel = Sable.HELPER.getContaining(targetLevel, requestPos);
         if (subLevel == null) return;
 
-        Pose3dc pose = subLevel.logicalPose();
-        Vec3 worldBlockCenter = JOMLConversion.toMojang(
-            pose.transformPosition(JOMLConversion.toJOML(Vec3.atCenterOf(requestPos)))
-        );
-
         Vec3 playerPos = player.position();
+        Vec3 requestedBlockCenter = Vec3.atCenterOf(requestPos);
         double playerScale = ScaleUtils.computeBlockReachScale(player);
         double distanceSquare = 6 * 6 * 4 * 4 * playerScale * playerScale;
 
         if (player.level().dimension() == dimension
-            && playerPos.distanceToSqr(worldBlockCenter) < distanceSquare) {
+            && Sable.HELPER.distanceSquaredWithSubLevels(
+                targetLevel, playerPos, requestedBlockCenter
+            ) < distanceSquare) {
             cir.setReturnValue(true);
             return;
         }
@@ -63,8 +59,9 @@ public abstract class MixinBlockManipulationServer {
         ).anyMatch(portal ->
             portal.getDestDim() == dimension
                 && portal.isInteractableBy(player)
-                && portal.transformPoint(playerPos).distanceToSqr(worldBlockCenter)
-                    < distanceSquare * portal.getScale() * portal.getScale()
+                && Sable.HELPER.distanceSquaredWithSubLevels(
+                    targetLevel, portal.transformPoint(playerPos), requestedBlockCenter
+                ) < distanceSquare * portal.getScale() * portal.getScale()
         );
 
         if (reachableViaPortal) {

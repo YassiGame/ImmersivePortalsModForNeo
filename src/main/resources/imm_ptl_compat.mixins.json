@@ -23,9 +23,21 @@
     "sodium.MixinSodiumShaderLoader",
     "sodium.MixinSodiumViewport",
     "sodium.MixinSodiumWorldRenderer",
+    "sable.MixinBlockManipulationServer",
+    "sable.MixinSableChunkMap",
+    "sable.MixinSableCommonEvents",
+    "sable.MixinSableServerSubLevel",
+    "sable.MixinSableSubLevelTrackingSystem"
+  ],
+  "client": [
     "sable.MixinSableSubLevelContainer",
+    "sable.MixinSableLevelPlot",
+    "sable.MixinSablePlotChunkHolder",
+    "sable.MixinSableClientWorldLoader",
+    "sable.MixinSableClientboundPacketContext",
+    "sable.MixinSableClientLevelChunkBlockChange",
     "sable.MixinBlockManipulationClient",
-    "sable.MixinBlockManipulationServer"
+    "sable.MixinClientSubLevelPunchHelper"
   ],
   "injectors": {
     "defaultRequire": 1

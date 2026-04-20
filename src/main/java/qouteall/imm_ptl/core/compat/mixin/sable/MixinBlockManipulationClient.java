@@ -1,6 +1,9 @@
 package qouteall.imm_ptl.core.compat.mixin.sable;
 
 import dev.ryanhcode.sable.mixinterface.clip_overwrite.ClipContextExtension;
+import dev.ryanhcode.sable.Sable;
+import dev.ryanhcode.sable.companion.math.JOMLConversion;
+import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -60,7 +63,8 @@ public abstract class MixinBlockManipulationClient {
         }
         if (subHit == null || subHit.getType() == HitResult.Type.MISS) return;
 
-        double subDistSqr = subHit.getLocation().distanceToSqr(from);
+        Vec3 subHitLocationInWorld = ip_projectHitLocationToWorld(remoteWorld, subHit);
+        double subDistSqr = subHitLocationInWorld.distanceToSqr(from);
 
         HitResult currentHit = BlockManipulationClient.remoteHitResult;
         boolean takeSub = true;
@@ -83,5 +87,21 @@ public abstract class MixinBlockManipulationClient {
     private static BlockHitResult ip_createMissed(Vec3 from, Vec3 to) {
         Vec3 dir = to.subtract(from).normalize();
         return BlockHitResult.miss(to, Direction.getNearest(dir.x, dir.y, dir.z), BlockPos.containing(to));
+    }
+
+    private static Vec3 ip_projectHitLocationToWorld(ClientLevel world, BlockHitResult hitResult) {
+        SubLevel subLevel = Sable.HELPER.getContaining(world, hitResult.getBlockPos());
+        if (subLevel == null) {
+            subLevel = Sable.HELPER.getContaining(world, hitResult.getLocation());
+        }
+        if (subLevel == null) {
+            return hitResult.getLocation();
+        }
+
+        return JOMLConversion.toMojang(
+            subLevel.logicalPose().transformPosition(
+                JOMLConversion.toJOML(hitResult.getLocation())
+            )
+        );
     }
 }

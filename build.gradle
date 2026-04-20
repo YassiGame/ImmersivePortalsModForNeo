@@ -48,6 +48,11 @@ repositories {
     }
 
     maven {
+        name "BlameJared"
+        url "https://maven.blamejared.com"
+    }
+
+    maven {
         name "Fabric"
         url "https://maven.fabricmc.net/"
     }
@@ -182,6 +187,9 @@ dependencies {
         // Sable-companion ships inside the Sable jarJar at runtime, but we need
         // its types (Pose3d etc.) on the compile classpath for the mixin.
         compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}"
+        // Sable's packet handlers expose Veil's PacketContext in their method
+        // descriptors; this is compile-only because Sable/Veil provide it at runtime.
+        compileOnly "foundry.veil:veil-common-${minecraft_version}:3.6.1"
     }
 }
 
