@@ -740,8 +740,10 @@ public class PortalDebugCommands {
         StringBuilder subStr = new StringBuilder();
         
         ImmPtlChunkTickets dimTicketManager = ImmPtlChunkTickets.get(world);
-        LevelEntityGetter<Entity> entityLookup = ((IEWorld) world).portal_getEntityLookup();
-        
+        LevelEntityGetter<Entity> entityLookup = McHelper.unwrapEntityLookup(
+            ((IEWorld) world).portal_getEntityLookup()
+        );
+
         subStr.append(String.format(
             "%s:\nImmPtl Tracked Chunks: %s\nImmPtl Loading Ticket:%s\nChunks: %s\nEntities:%s Entity Sections:%s\n",
             world.dimension().location(),

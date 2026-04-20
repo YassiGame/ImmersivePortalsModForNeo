@@ -47,6 +47,23 @@ repositories {
         url "https://maven.tterrag.com/"
     }
 
+    maven {
+        name "BlameJared"
+        url "https://maven.blamejared.com"
+    }
+
+    maven {
+        name "Fabric"
+        url "https://maven.fabricmc.net/"
+    }
+
+    // Sable-companion (Pose3d, math types used by Sable) — needed at
+    // mixin-compile time for our Sable compat mixin.
+    maven {
+        name "Ryanhcode"
+        url "https://maven.ryanhcode.dev/releases"
+    }
+
     flatDir {
         dir "deps"
     }
@@ -151,16 +168,29 @@ dependencies {
 //    implementation "curse.maven:camol-1214396:6337020"
 
     // Oritech
-    implementation "maven.modrinth:oritech:0.16.2"
-    implementation "maven.modrinth:architectury-api:13.0.8+neoforge"
-    implementation "maven.modrinth:geckolib:DTo3uxPN"
-    implementation "maven.modrinth:stitch:4.0.1"
+    //implementation "maven.modrinth:oritech:0.16.2"
+    //implementation "maven.modrinth:architectury-api:13.0.8+neoforge"
+    //implementation "maven.modrinth:geckolib:DTo3uxPN"
+    //implementation "net.fabricmc:stitch:0.6.2"
 
     // Create
-    implementation "maven.modrinth:create:1.21.1-6.0.6"
+    implementation "maven.modrinth:create:mc1.21.1-6.0.9"
 
     // Mekanism
-    implementation "maven.modrinth:mekanism:10.7.14.79"
+    //implementation "maven.modrinth:mekanism:10.7.14.79"
+
+
+    if (project.enable_sable.equals('true')) {
+        // Use implementation so Sable classes are available at mixin-compile time.
+        // The compat mixin plugin only applies Sable mixins when the mod is present.
+        implementation "maven.modrinth:sable:${sable_version}"
+        // Sable-companion ships inside the Sable jarJar at runtime, but we need
+        // its types (Pose3d etc.) on the compile classpath for the mixin.
+        compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}"
+        // Sable's packet handlers expose Veil's PacketContext in their method
+        // descriptors; this is compile-only because Sable/Veil provide it at runtime.
+        compileOnly "foundry.veil:veil-common-${minecraft_version}:3.6.1"
+    }
 }
 
 tasks.named('build').configure { dependsOn('jarJar') }

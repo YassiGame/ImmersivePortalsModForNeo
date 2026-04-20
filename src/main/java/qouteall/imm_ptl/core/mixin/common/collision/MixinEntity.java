@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -79,15 +81,14 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
     @Shadow private @Nullable BlockState inBlockState;
     @Unique
     private static final CountDownInt IMM_PTL_LOG_COUNTER = new CountDownInt(20);
-    
-    @Redirect(
+    @WrapOperation(
         method = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V",
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/world/entity/Entity;collide(Lnet/minecraft/world/phys/Vec3;)Lnet/minecraft/world/phys/Vec3;"
         )
     )
-    private Vec3 redirectHandleCollisions(Entity entity, Vec3 attemptedMove) {
+    private Vec3 redirectHandleCollisions(Entity entity, Vec3 attemptedMove, Operation<Vec3> original) {
         if (!IPGlobal.enableServerCollision) {
             if (!entity.level().isClientSide()) {
                 if (entity instanceof Player) {
@@ -98,7 +99,7 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
                 }
             }
         }
-        
+
         if (attemptedMove.lengthSqr() > 60 * 60) {
             // avoid loading too many chunks in collision calculation and lag the server
             if (IMM_PTL_LOG_COUNTER.tryDecrement()) {
@@ -108,22 +109,21 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
                     new Throwable()
                 );
             }
-            
+
             return Vec3.ZERO;
         }
-        
+
         if (!IPGlobal.crossPortalCollision
             || ip_portalCollisionHandler == null
             || !ip_portalCollisionHandler.hasCollisionEntry()
         ) {
-            Vec3 normalCollisionResult = collide(attemptedMove);
-            return normalCollisionResult;
+            return original.call(entity, attemptedMove);
         }
-        
+
         Vec3 result = ip_portalCollisionHandler.handleCollision(
             (Entity) (Object) this, attemptedMove
         );
-        
+
         if (result.lengthSqr() > 20 * 20) {
             if (IMM_PTL_LOG_COUNTER.tryDecrement()) {
                 LOGGER.error(
@@ -133,7 +133,7 @@ public abstract class MixinEntity implements IEEntity, ImmPtlEntityExtension {
             }
             return Vec3.ZERO;
         }
-        
+
         return result;
     }
     

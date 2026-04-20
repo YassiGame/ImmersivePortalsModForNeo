@@ -49,7 +49,12 @@ public class IPCompatMixinPlugin implements IMixinConfigPlugin {
             boolean cardinalCompLoaded = modList.getModFileById("cardinal-components-base") != null;
             return cardinalCompLoaded;
         }
-        
+
+        if (mixinClassName.contains(".sable.")) {
+            boolean sableLoaded = modList.getModFileById("sable") != null;
+            return sableLoaded;
+        }
+
         return false;
     }
     
